@@ -7,6 +7,7 @@ from datetime import date
 from random import randint, choice
 from packages.misc import format_number as fn
 import aiohttp
+import math
 async def fetch(session, url):
     async with session.get(url) as response:
         return await response.text()
@@ -470,7 +471,44 @@ cars = {
     219 : 'Calculatron',
     220 : 'Screw Tank',
     221 : 'Hoverbike',
-    222 : 'Jet Bicycle'
+    222 : 'Jet Bicycle',
+    223: 'Wrapped Flyer',
+    224: 'The Festivitank',
+    225: 'Typiano Pizza Car',
+    226: 'Buggani Vyrus LR',
+    227: 'Jet Powered Truck',
+    228: 'Lamborgotti Vengeance',
+    230: 'X2 Eclipse',
+    232: 'Monster Truck Redux',
+    233: 'Covenant Leo',
+    234: 'Zonday Tricolore 2021',
+    235: 'Strykist 1300',
+    236: 'The Glamrod',
+    237: 'Linux Elipse',
+    238: 'Road Warrior Rally',
+    239: 'Furious Maxx',
+    241: 'Bimmer M6',
+    242: 'The Dominator',
+    243: 'Heartbreaker LV-2',
+    244: 'Ice Hauler',
+    245: 'The Kelvin',
+    246: 'Buggani Vyrus LR',
+    247: 'Error 503',
+    249: 'Sprinter \'90',
+    252: 'Koromoto DJ Cruiser',
+    253: 'Koromoto GT-R',
+    254: 'Koromoto GT-R LS',
+    255: 'Stingtec Technotruck',
+    256: 'Four Leaf Rover',
+    257: 'Corsa Iris',
+    258: 'Sprinter \'90 Vapor',
+    259: 'Winson Track\'d',
+    261: 'Stingtec Marianas',
+    262: 'Personal Water Craft',
+    263: 'Blitz T8 Roadster',
+    264: 'Liberty Demon XRT',
+    266: 'Mongoose SU-5'
+
 }
 
 class NewsClass:
@@ -507,7 +545,7 @@ shadowcars = {
     2:'https://cdn.discordapp.com/attachments/763376521674620928/763377013800697876/wdegexqaZNU2AAAAABJRU5ErkJggg.png',
     3:'https://cdn.discordapp.com/attachments/763376521674620928/763377157409210388/UbKHC2vdl48AAAAASUVORK5CYII.png',
     4:'https://cdn.discordapp.com/attachments/763376521674620928/763377459314950174/Db2Bzxd3hkFQAAAABJRU5ErkJggg.png',
-    5:'https://cdn.discordapp.com/attachments/3763376521674620928/763377566274682940/rKbI2a6LwP8DnU2eCbYj11sAAAAASUVORK5CYII.png',
+    5:'https://media.discordapp.net/attachments/763376521674620928/763377566274682940/rKbI2a6LwP8DnU2eCbYj11sAAAAASUVORK5CYII.png',
     6:'https://cdn.discordapp.com/attachments/763376521674620928/763377705797419028/TbNz0VKupqAyzAalc0RPpum76Cvz91HuRoKAJJnQAAAABJRU5ErkJggg.png',
     7:'https://cdn.discordapp.com/attachments/763376521674620928/763378262746857522/HiMXriMAAAAASUVORK5CYII.png',
     8:'https://cdn.discordapp.com/attachments/763376521674620928/763378531395960872/wF13UXz2IpR1AAAAABJRU5ErkJggg.png',
@@ -780,6 +818,15 @@ class RacerClass:
 
             self.membership = newdata['membership']
 
+
+            '''try:
+                    if re.search(str({newdata["carID"]}).lower(), str({newdata["carID"]}).lower()).group():
+                      cardata = elem
+                      self.car = f'https://www.nitrotype.com/cars/{cardata}_large_1.png'
+            except:
+              print('no u')'''
+            '''self.car = f'https://www.nitrotype.com/cars/{newdata["carHueAngle"]}_large_1.png'''
+
             if newdata['carHueAngle'] == 0:
                 self.car = f'https://www.nitrotype.com/cars/{newdata["carID"]}_large_1.png'
             else:
@@ -902,6 +949,45 @@ class RacerClass:
                 self.season_speed = 0
                 self.season_accuracy = 0
                 self.season_points = 0
+
+            self.speed_rounded = int(math.floor(int(self.wpm_average)/10)*10)
+            if self.speed_rounded > 220:
+                self.speed_role = '220+ WPM'
+            else:
+                self.speed_role = f'{str(self.speed_rounded)}-{str(self.speed_rounded+9)} WPM'
+            try:
+                accuracy = int(round(self.season_accuracy, 1))
+            except:
+                accuracy = int(round(self.daily_accuracy, 1))
+            accuracy_roles = [">99% Accuracy", "99% Accuracy", "98% Accuracy", "97% Accuracy", "96% Accuracy", "94-95% Accuracy", "90-93% Accuracy", "87-89% Accuracy", "84-86% Accuracy", "80-83% Accuracy", "75-79% Accuracy", "<75% Accuracy"]
+            for role in accuracy_roles:
+                if '>' in role and accuracy > 99:
+                    self.accuracy_role = '>99% Accuracy'
+                    break
+                if '-' in role.split('%')[0]:
+                    new_role = role.split('%')[0].split('-')
+                    the_range = range(int(new_role[0]), int(new_role[1]))
+                    if math.floor(accuracy) in the_range:
+                        self.accuracy_role = role
+                        break
+                    continue
+                if '<' in role and accuracy < 75:
+                    self.accuracy_role = "<75% Accuracy"
+                    break
+                else:
+                    new_role = role.split('%')
+                    if math.floor(accuracy) == int(new_role[0].replace('>', '').replace('<', '')):
+                        self.accuracy_role = role
+                        break
+            self.race_roles = ["500000+ Races", "250000-499999 Races", "200000-249999 Races", "150000-199999 Races", "100000-149999 Races", "75000-99999 Races", "50000-74999 Races", "40000-49999 Races", "30000-39999 Races", "20000-29999 Races", "10000-19999 Races", "5000-9999 Races", "3000-4999 Races", "1000-2999 Races","500-999 Races", "100-499 Races", "50-99 Races", "1-49 Races"]
+            self.race_zones = [(int(x.split('+')[0]),) if '+' in x else range(int(x.split('-')[0].strip().replace(' Races', '')), int(x.split('-')[1].strip().replace(' Races', ''))) for x in self.race_roles]
+            index = 0
+            races = newdata['racesPlayed']
+            for zone in self.race_zones:
+                if int(races) in zone:
+                    self.race_role = self.race_roles[index]
+                    break
+                index += 1
             self.friend_reqs_allowed = ':white_check_mark: ' if newdata['allowFriendRequests'] == 1 else ':negative_squared_cross_mark:'
             self.looking_for_team = ':white_check_mark: ' if newdata['lookingForTeam'] == 1 else ':negative_squared_cross_mark:'
 async def Racer(username):

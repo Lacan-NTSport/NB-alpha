@@ -78,7 +78,9 @@ async def update_comp(compid):
     dbclient = DBClient()
     collection = dbclient.db['test']
     data = await dbclient.get_array(collection, {'$and': [{'compid': compid}, {'compid': compid}]})
-    old = copy.deepcopy(data)
+    async for d in data:
+        data = d
+        old = copy.deepcopy(data)
     other = data['other']
     players = data['players']
     team = other['team']
@@ -148,6 +150,8 @@ async def l(compid, category="races"):
     dbclient = DBClient()
     collection = dbclient.db['test']
     data = await dbclient.get_array(collection, {'$and': [{'compid': compid}, {'compid': compid}]})
+    async for d in data:
+        data = d
     usernames = []
     displays = []
     categorylist = []
@@ -172,35 +176,36 @@ async def l(compid, category="races"):
         cleanresult.append((t[1], t[2], t[0]))
 
     return ('nothing LMAO', cleanresult)
-async def NT_to_discord(id, bypass_verified=False):
+async def NT_to_discord(id, bypass_verified=False, get_id=False):
     from mongoclient import DBClient
     dbclient = DBClient()
     collection = dbclient.db.NT_to_discord
-    data = await dbclient.get_big_array(collection, 'registered')
-    for elem in data['registered']:
-        if str(id) == elem['userID'] or str(id) == elem['NTuser']:
-            if elem['verified'] == 'true' or bypass_verified:
-                racer = await Racer(elem['NTuser'])
-                return True, racer
-            else:
-                embed = Embed('Error!', 'You\'re not verified yet!', 'warning')
-                return False, embed
+    data = await dbclient.get_array(collection, {'$or': [{'userID': str(id)}, {'NTuser': str(id)}]})
+    async for elem in data:
+        if elem['verified'] == 'true' or bypass_verified:
+            if get_id:
+                return True, elem['userID']
+            racer = await Racer(elem['NTuser'])
+            return True, racer
+        else:
+            embed = Embed('Error!', 'You\'re not verified yet!', 'warning')
+            return False, embed
     else:
         try:
             return True, await Racer(str(id))
         except:
             embed = Embed('Error!', 'Couldn\'t find that user', 'warning')
             return False, embed
-async def get_username(string, bypass=False):
+async def get_username(string, bypass=False, get_id=False):
     string = list(str(string))
     if ''.join(string[:3]) == "<@!":
-        return await NT_to_discord(''.join(string[3:-1]), bypass)
+        return await NT_to_discord(''.join(string[3:-1]), bypass, get_id)
     if ''.join(string[:2]) == "<@":
-        return await NT_to_discord(''.join(string[2:-1]), bypass)
+        return await NT_to_discord(''.join(string[2:-1]), bypass, get_id)
     if len(string) in [17, 18]:
-        return await NT_to_discord(''.join(string), bypass)
+        return await NT_to_discord(''.join(string), bypass, get_id)
     else:
-        return await NT_to_discord(''.join(string), bypass)
+        return await NT_to_discord(''.join(string), bypass, get_id)
 async def check_perms(userid, perms: dict):
     racer = await get_username(userid)
     if racer[0] == False:
@@ -225,8 +230,8 @@ async def check_perms(userid, perms: dict):
 async def verify(ctx):
     dbclient = clientDB()
     collection = dbclient.db.NT_to_discord
-    dbdata = await dbclient.get_big_array(collection, 'registered')
-    for elem in dbdata['registered']:
+    dbdata = await dbclient.get_array(collection, {'userID': str(ctx.author.id)})
+    async for elem in dbdata:
         if elem['userID'] == str(ctx.author.id):
             racer = await Racer(elem['NTuser'])
             if elem['verified'] == 'false':
@@ -279,3 +284,54 @@ async def verify(ctx):
         embed = Embed('<a:error:800338727645216779>  Error!', 'Your account isn\'t registered yet.\nAlready registered? Make sure to run `n.verify` to verify your ownership!')
         await embed.send(ctx)
         return
+async def verify_race(ctx):
+    dbclient = clientDB()
+    collection = dbclient.db.NT_to_discord
+    dbdata = await dbclient.get_array(collection, {})
+    async for elem in dbdata:
+        old = copy.deepcopy(elem)
+        if elem['userID'] == str(ctx.author.id):
+            if elem['verified'] == 'false':
+                username = elem['NTuser']
+                embed = Embed(':clipboard:  Verify your Identity!', f'Join the race to verify **{username}** is owned by you. You don\'t own **{username}**? Run `n.unregister` to unlink your discord from this account.')
+                embed.field('__Instructions__', 'Once you join the race, the race leader will leave and you just have to type `n.verify` again to verify. If this does not work after several times typing `n.verify`, please try unregistering and registering again.')
+                embed.field('__Short instructions__', '**1.** Run `n.verify`\n**2.** Join the race track shown under the link category.\n**3.** Run `n.verify` again.')
+                embed.field('__Common errors__', 'Is the race leader not joining the race? Run `n.verify` again and refresh your page, after maximal **5** times running the command, the race leader joins and you can attempt to verify.')
+                embed.field('__Link__', 'Join [this](https://www.nitrotype.com/race/lacanverification) race to verify your identity.')
+                await embed.send(ctx)
+                elem['verifyCar'] = None
+                elem['verified'] = 'in progress'
+                dbclient = DBClient()
+                collection = dbclient.db.NT_to_discord
+                await dbclient.update_array(collection, old, elem)
+                async with aiohttp.ClientSession() as s:
+                    await fetch(s,'https://Lacan-Verification.try2win4code.repl.co')
+                break
+            if elem['verified'] == 'in progress':
+                async with aiohttp.ClientSession() as s:
+                    response = await fetch(s,'https://Lacan-Verification.try2win4code.repl.co', method='GET')
+
+                data = json.loads(response)
+                if elem['NTuser'] in data['verified']:
+                    elem['verified'] = 'true'
+                    dbclient = DBClient()
+                    await dbclient.update_array(collection, old, elem)
+                    embed = Embed('<a:Check:797009550003666955>  Success', 'You\'ve been verified! In case this is a premium 💠 server do `n.update` to update your roles.')
+                    await embed.send(ctx)
+                    break
+                else:
+                    username = elem['NTuser']
+                    embed = Embed('Nearly there!', f'You\'re nearly done - just one more step to go!\nYou are just about to verify your ownership for **{username}**. Not you? Run `n.unregister` to unlink your discord from this account.', 'warning')
+                    embed.field('__Instructions__', 'Please join the race and run `n.verify` again.')
+                    embed.field('__Common errors__', 'Is the race leader not joining the race? Run `n.verify` again and refresh your page, after maximal **5** times running the command, the race leader joins and you can attempt to verify.')
+                    embed.field('__Link__', 'Join [this](https://www.nitrotype.com/race/lacanverification) race to verify your identity.')
+                    await embed.send(ctx)
+                    async with aiohttp.ClientSession() as s:
+                        await fetch(s,'https://Lacan-Verification.try2win4code.repl.co')
+                    break
+            if elem['verified'] == 'true':
+                embed = Embed('Error!', 'You are already verified :rofl:', 'joy')
+                return await embed.send(ctx)
+    else:
+        embed = Embed('Error!', 'You have not registered yet. Make sure to run `n.register <username>`', 'warning')
+        await embed.send(ctx)

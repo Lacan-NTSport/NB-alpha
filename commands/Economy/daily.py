@@ -37,16 +37,14 @@ class Command(commands.Cog):
         dbclient = DBClient()
         collection = dbclient.db.pointsdb
         data = await dbclient.get_array(collection, {'$and': [{'userid': str(ctx.author.id)}, {'userid': str(ctx.author.id)}]})
-        async for d in data:
-            user = d
-            break
-        embed = Embed('<a:success:800340618579935233>  Success!', 'You\'ve collected your daily **5** '+random_lacan+' succesfully!')
+        user = data
         try:
             old = user.copy()
             if ((round(time.time())-user['laststamp'] >= 75600)):
                 user['points'] += 5
                 user['laststamp'] = round(time.time())
                 await dbclient.update_array(collection, old, user)
+                embed = Embed('<a:success:800340618579935233>  Success!', 'You\'ve collected your daily **5** '+random_lacan+' succesfully!')
                 #await embed.send(ctx)
 
                 #Embed for lacan Log
@@ -83,8 +81,6 @@ class Command(commands.Cog):
                 #await channel.send(embed=embed1)
             else:
                 await dbclient.create_doc(collection, {'userid': str(ctx.author.id), 'points': 5, 'laststamp': round(time.time())})
-        except UnboundLocalError:
-          await dbclient.create_doc(collection, {'userid': str(ctx.author.id), 'points': 5, 'laststamp': round(time.time())})
         await embed.send(ctx)
 def setup(client):
     client.add_cog(Command(client))

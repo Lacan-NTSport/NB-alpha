@@ -38,8 +38,8 @@ class Command(commands.Cog):
         #dbdata = json.loads(requests.get('https://test-db.nitrotypers.repl.co', data={"key": dbkey}).text)
         dbclient = DBClient()
         collection = dbclient.db.NT_to_discord
-        dbdata = await dbclient.get_array(collection, {})
-        async for x in dbdata:
+        dbdata = await dbclient.get_big_array(collection, 'registered')
+        for x in dbdata['registered']:
             if str(ctx.author.id) == x['userID']:
                 embed = Embed('Error!', 'You\'ve already registered!\nRun `n.verify` to check if you already verified your identity and in case this is a premium :diamond_shape_with_a_dot_inside: server and you are already verified, run `n.update` to update your roles.', 'warning')
                 await embed.send(ctx)
@@ -49,11 +49,11 @@ class Command(commands.Cog):
                         await embed.send(ctx)
                         return
         else:
-            await dbclient.create_doc(collection, {"userID": str(ctx.author.id), "NTuser": racer.username.lower(), "verified": "false"})
+            dbdata['registered'].append({"userID": str(ctx.author.id), "NTuser": racer.username.lower(), "verified": "false"})
             #if json.loads(requests.post('https://test-db.nitrotypers.repl.co', data={"key": dbkey, "data": json.dumps(dbdata)}).text)['success'] == 'true':
         dbclient = DBClient()
         collection = dbclient.db.NT_to_discord
-        #await dbclient.update_big_array(collection, 'registered', dbdata)
+        await dbclient.update_big_array(collection, 'registered', dbdata)
         embed = Embed('Success!', 'You are now registered to `' + racer.username.lower() + '`. Type `n.verify` to verify your ownership!', 'white_check_mark')
         await embed.send(ctx)
 def setup(client):

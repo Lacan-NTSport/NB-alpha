@@ -33,7 +33,7 @@ class AutoUpdate(commands.Cog):
         
         dbclient = DBClient()
         collection = dbclient.db['test']
-        documents = await dbclient.get_array(collection, {})
+        documents = collection.find({})
         async for data in documents:
             old = copy.deepcopy(data)
             compid = data['compid']
@@ -41,12 +41,8 @@ class AutoUpdate(commands.Cog):
                 continue
             endcomptime = data['other']['endcomptime']
             if round(time.time()) < endcomptime:
-              try:
                 await nitrotype.update_comp(compid)
                 continue
-              except:
-                print('Couldn\'t update Comp!')
-                pass
             elif round(time.time()) >= endcomptime:
                 await nitrotype.update_comp(str(compid))
                 lb = await nitrotype.l(str(compid))

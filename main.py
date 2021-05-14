@@ -4,31 +4,43 @@
 NitroType Bot
 ~~~~~~~~~~~~~
 A discord bot designed for those interested in NitroType
-:copyright: (c) 2021 Nitrotypers
+:copyright: (c) 2020 Nitrotypers
 :license: MIT, see LICENSE.txt for more details
 '''
 
-__title__ = 'Lacan NTSport'
-__version__ = 'Full'
+__title__ = 'Lacan NitroSport'
+__version__ = 'Beta'
 __author__ = 'SystematicError, Typerious, Try2Win4Glory, adl212'
-__copyright__ = 'Copyright 2021 Nitrotypers'
+__copyright__ = 'Copyright 2020 Nitrotypers'
 __license__ = 'MIT'
 
 # --- Start Code --- #
-import nest_asyncio
-nest_asyncio.apply()
 from discord.ext import commands
+from discord import Streaming
 from packages.server import start_server
-from os import listdir, getenv
+from os import listdir, getenv, system
+import json, requests
 from mongoclient import DBClient
-from packages.utils import Embed
+import dbl
+from packages.utils import Embed, ImproperType
 import asyncio, random
+import subprocess
+import sys
 import logging
 import discord
+import os 
 import time
 from statistics import mean
-from nitrotype import check_perms
+from discord.utils import get
+from nitrotype import check_perms, get_username
+from packages.nitrotype import Team, Racer
 import copy
+import keep_alive
+try: import requests
+except ImportError:
+  print ("Trying to Install required module: motor tornado\n")
+  os.system('python', '-m', 'pip', 'install', requests)
+  import requests
 
 #keep_alive.keep_alive()
 
@@ -84,7 +96,6 @@ async def on_message(message):
         #embed=Embed('Lacan NTSport', 'Test')
         #await embed.send
         #return
-
         embed=Embed('Lacan NTSport', '**__FAQ:__**\n\nWho am I?\nI\'m Lacan NTSport, a multi purpose discord bot for the game [nitrotype](https://nitrotype.com/).\n\nWhat\'s my prefix?\nMy prefix is `n.` or `N.`.\n\nHow do I get a list of commands?\nIn order to get a full list of commands make sure to run `n.help`.\n\nHow can you invite me to your server?\nIn order to invite me to your server, run `n.invite`.\n\nWho are my developers?\nI was developed by <@505338178287173642>, <@396075607420567552>, <@637638904513691658>.\n\nWhat\'s premium? How can I get it?\nIn order to learn more about premium, make sure to run `n.premium`.', 'information source')
         return await embed.send(ctx, dm=False)
         #return await message.channel.send('<@505338178287173642> **YOU FUCKING BASTARD**')
@@ -95,7 +106,6 @@ async def on_message(message):
     '''#Permanent Bans:
     ctx = await client.get_context(message)
     if message.author.id == permbanned[0] and (
-
                 message.content.startswith('n.')
                 or message.content.startswith('N.')
                 or message.content.startswith('<@!713352863153258556>') or message.content.startswith('<@713352863153258556>')) or int(message.guild.id) == 799733929481207858:
@@ -108,7 +118,6 @@ async def on_message(message):
     '''
     try:
         if int(message.author.id) in banned and (
-
                 message.content.startswith('n.')
                 or message.content.startswith('N.')
                 or message.content.startswith('<@!713352863153258556>') or message.content.startswith('<@713352863153258556>')) or int(message.guild.id) == 799733929481207858:
@@ -157,29 +166,24 @@ async def on_message(message):
                 #print(f"{message.content} | {message.author.id} | {str(message.author)} | {message.guild.id} | {str(message.guild)}")
                 async with message.channel.typing():
                     await asyncio.sleep(random.uniform(0.05, 0.1))
-                #return await client.process_commands(message)
                 try:
                     ctx = await client.get_context(message)
                     await ctx.command.invoke(ctx)
                 except Exception as e:
-                    raise e
                     shouldraise = True
                     if isinstance(e, AttributeError):
                         embed = Embed(
                             '<a:error:800338727645216779>  Error!',
-
                             '**Unrecognized command!**\nFor a full list of commands, make sure to use `n.help`.',
                             color=0xff0000)
                         await embed.send(ctx)
                         shouldraise = False
                     else:
-
                           embed = Embed('<a:error:800338727645216779>  Error!', f'```{e}```\nThe developers have received your error message.\nUse `n.errors` for an explaination on your error.')
                           await embed.send(ctx)
                     channel = discord.utils.get(client.get_all_channels(), id=787018607481192479)
                     channel2 = discord.utils.get(client.get_all_channels(), id = 803938544175284244)
                     '''embed = Embed('__**Command Log**__', str(message.author))
-
                     embed.field('__Command__', f'`n.{("".join(list(message.content)[2:]))}`')
                     embed.field('__User ID__', f'`{str(message.author.id)}`')
                     embed.field('__Guild ID__', f'`{str(message.guild.id)}`')
@@ -241,7 +245,6 @@ async def on_guild_join(guild):
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
             try:
-
               embed=Embed('Thanks for inviting me!', 'Thank you for inviting me to your server.\n\n**__FAQ:__**\n\nWho am I?\nI\'m Lacan NTSport, a multi purpose discord bot for the game [nitrotype](https://nitrotype.com/).\n\nWhat\'s my prefix?\nMy prefix is `n.` or `N.`.\n\nHow do I get a list of commands?\nIn order to get a full list of commands make sure to run `n.help`.\n\nHow can you invite me to your server?\nIn order to invite me to your server, run `n.invite`.\n\nWho are my developers?\nI was developed by <@505338178287173642>, <@396075607420567552>, <@637638904513691658>.\n\nWhat\'s premium? How can I get it?\nIn order to learn more about premium, make sure to run `n.premium`.', 'information source')
               return await embed.send
               break

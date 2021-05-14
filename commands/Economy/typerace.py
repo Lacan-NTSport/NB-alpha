@@ -75,9 +75,7 @@ class Command(commands.Cog):
             dbclient = DBClient()
             collection = dbclient.db.pointsdb
             data = await dbclient.get_array(collection, {'$and': [{'userid': str(ctx.author.id)}, {'userid': str(ctx.author.id)}]})
-            async for d in data:
-                user = d
-                break
+            user = data
             try:
                 old = copy.deepcopy(user)
                 for car in user['cars']:
@@ -109,7 +107,7 @@ class Command(commands.Cog):
                 if user['userid'] == str(ctx.author.id):
                     user['points'] += earned
                     await dbclient.update_array(collection, old, user)
-            except UnboundLocalError:
+            except:
                 await dbclient.create_doc(collection, {'userid': str(ctx.author.id), 'points': earned})
 
         else:
@@ -120,9 +118,7 @@ class Command(commands.Cog):
             collection = dbclient.db.pointsdb
             data = await dbclient.get_array(collection, {'$and': [{'userid': str(ctx.author.id)}, {'userid': str(ctx.author.id)}]})
             lost = -3
-            async for d in data:
-                user = d
-                break
+            user = data
             try:
                 old = user.copy()
                 if user['userid'] == str(ctx.author.id):
@@ -130,7 +126,7 @@ class Command(commands.Cog):
                     await dbclient.update_array(collection, old, user)
                 else:
                     await dbclient.create_doc(collection, {'userid': str(ctx.author.id), 'points': lost})
-            except UnboundLocalError:
+            except:
                 await dbclient.create_doc(collection, {'userid': str(ctx.author.id), 'points': lost})
             return
 
